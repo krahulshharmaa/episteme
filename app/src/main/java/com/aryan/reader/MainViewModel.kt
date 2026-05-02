@@ -272,7 +272,8 @@ data class ReaderScreenState(
     val appContrastOption: AppContrastOption = AppContrastOption.STANDARD,
     val appTextDimFactor: Float = 1.0f,
     val appSeedColor: androidx.compose.ui.graphics.Color? = null,
-    val customAppThemes: List<CustomAppTheme> = emptyList()
+    val customAppThemes: List<CustomAppTheme> = emptyList(),
+    val screenProtectEnabled : Boolean = false
 )
 
 open class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -2788,6 +2789,12 @@ open class MainViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun screenProtectToggle(){
+        _internalState.update {
+            it.copy(screenProtectEnabled = !it.screenProtectEnabled) }
+            prefs.edit { putBoolean(PROTECT_SCREEN_CAPTURE, !(prefs.getBoolean(PROTECT_SCREEN_CAPTURE, false))) }
+    }
+
     fun setRecentFilesLimit(limit: Int) {
         _internalState.update { it.copy(recentFilesLimit = limit) }
         prefs.edit { putInt(KEY_RECENT_FILES_LIMIT, limit) }
@@ -4781,6 +4788,7 @@ open class MainViewModel(application: Application) : AndroidViewModel(applicatio
         private const val KEY_APP_SEED_COLOR = "app_seed_color"
         private const val KEY_APP_TEXT_DIM_FACTOR = "app_text_dim_factor"
         private const val KEY_CUSTOM_APP_THEMES = "custom_app_themes"
+        private const val PROTECT_SCREEN_CAPTURE = "protect_screen_capture"
 
         val SUPPORTED_MIME_TYPES = arrayOf(
             "application/pdf", "application/epub+zip", "application/x-mobipocket-ebook",

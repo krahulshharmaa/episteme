@@ -26,6 +26,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -160,6 +161,7 @@ fun HomeScreen(
     val customTabUriHandler = remember { CustomTabUriHandler(context) }
     var showCloseAllTabsDialog by remember { mutableStateOf(false) }
     var showAppThemePanel by remember { mutableStateOf(false) }
+    val activity = context as? Activity
 
     CompositionLocalProvider(LocalUriHandler provides customTabUriHandler) {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -228,6 +230,21 @@ fun HomeScreen(
             uiState.errorMessage?.let { message ->
                 snackbarHostState.showSnackbar(message)
                 viewModel.errorMessageShown()
+            }
+        }
+
+        LaunchedEffect(uiState.screenProtectEnabled) {
+            activity?.window?.let { window ->
+                if (uiState.screenProtectEnabled) {
+                    window.setFlags(
+                        WindowManager.LayoutParams.FLAG_SECURE,
+                        WindowManager.LayoutParams.FLAG_SECURE
+                    )
+                } else {
+                    window.clearFlags(
+                        WindowManager.LayoutParams.FLAG_SECURE
+                    )
+                }
             }
         }
 
@@ -339,7 +356,10 @@ fun HomeScreen(
                                 },
                                 onAppThemeClick = { showAppThemePanel = true },
                                 onTestPanelDetectionClick = { viewModel.testPanelDetection(context) },
-                                onLanguageClick = { showLanguageDialog = true }
+                                onLanguageClick = { showLanguageDialog = true },
+                                onScreenProtectToggled = {
+                                    viewModel.screenProtectToggle()
+                                }
                             )
                         } else {
                             ContextualTopAppBar(
@@ -988,7 +1008,8 @@ fun DefaultTopAppBar(
     onStrictFilterToggleClick: () -> Unit,
     onAppThemeClick: () -> Unit,
     onTestPanelDetectionClick: () -> Unit,
-    onLanguageClick: () -> Unit
+    onLanguageClick: () -> Unit,
+    onScreenProtectToggled: () -> Unit
 ) {
     var showOptionsMenu by remember { mutableStateOf(false) }
     var showLimitMenu by remember { mutableStateOf(false) }
@@ -1053,6 +1074,15 @@ fun DefaultTopAppBar(
                     showOptionsMenu = false
                 }, trailingIcon = {
                     if (uiState.isTabsEnabled) {
+                        Icon(Icons.Default.Check, contentDescription = "Enabled")
+                    }
+                })
+
+                DropdownMenuItem(text = { Text("Protect Screen Capture") }, onClick = {
+                    showOptionsMenu = false
+                    onScreenProtectToggled()
+                }, trailingIcon = {
+                    if (uiState.screenProtectEnabled) {
                         Icon(Icons.Default.Check, contentDescription = "Enabled")
                     }
                 })
